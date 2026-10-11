@@ -4,8 +4,6 @@ A local finance dashboard backed by Google Sheets. Track spending by month and c
 
 ## Showcase
 
-Screenshots use fictional demo data.
-
 **Overview** — See net expenses, monthly averages, spending trends, and top categories. Filter by reporting bucket, year, month, category, or tracked status.
 
 ![Ledger overview showing expense totals, monthly spending trends, and category breakdowns](docs/screenshots/overview.png)
