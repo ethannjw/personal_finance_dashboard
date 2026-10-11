@@ -1,0 +1,30 @@
+services:
+  ledger:
+    image: ${DOCKER_IMAGE:-ledger-finance:local}
+    build:
+      context: .
+    user: "${LOCAL_UID:-65532}:${LOCAL_GID:-65532}"
+    read_only: true
+    environment:
+      # Pass through only when set on the host; otherwise use the mounted .env.
+      FINANCE_SHEET_ID:
+      FINANCE_TRANSACTIONS_TAB:
+      FINANCE_CATEGORIES_TAB:
+      FINANCE_HOST: 0.0.0.0
+      FINANCE_PORT: "8765"
+      GOOGLE_TOKEN_FILE: /run/secrets/google_token.json
+    ports:
+      - "127.0.0.1:${LEDGER_PORT:-8765}:8765"
+    volumes:
+      - type: bind
+        source: ${LEDGER_ENV_FILE:-./.env}
+        target: /app/.env
+        read_only: true
+        bind:
+          create_host_path: false
+      - type: bind
+        source: ${GOOGLE_TOKEN_FILE:?Use make docker-run to load GOOGLE_TOKEN_FILE from the app configuration}
+        target: /run/secrets/google_token.json
+        read_only: true
+        bind:
+          create_host_path: false

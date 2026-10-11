@@ -1,6 +1,20 @@
 # Ledger
 
-A local finance dashboard backed by Google Sheets. The backend is Go with Chi; the frontend uses plain JavaScript, HTML, CSS, and a locally bundled Tabulator 6.5.0 transaction grid. Google Sheets is the database.
+A local finance dashboard backed by Google Sheets. Track spending by month and category, separate personal and shared expenses, and edit transactions with changes saved to your spreadsheet.
+
+## Showcase
+
+Screenshots use fictional demo data.
+
+**Overview** — See net expenses, monthly averages, spending trends, and top categories. Filter by reporting bucket, year, month, category, or tracked status.
+
+![Ledger overview showing expense totals, monthly spending trends, and category breakdowns](docs/screenshots/overview.png)
+
+**Transactions** — Search, sort, and filter individual transactions, edit descriptions and notes, update categories in bulk, and export CSV. This page has its own filters, separate from Overview.
+
+![Ledger transactions showing column filters, bulk category updates, and editable transaction rows](docs/screenshots/transactions.png)
+
+The backend is Go with Chi; the frontend uses plain JavaScript, HTML, CSS, and a locally bundled Tabulator 6.5.0 transaction grid. Google Sheets is the database.
 
 ## Requirements
 
@@ -36,13 +50,39 @@ The surrounding Finance workspace also provides `../run_finance_app.sh`, which e
 
 The multi-stage [Dockerfile](Dockerfile) bundles Tabulator and runs the frontend/Go checks, then compiles a static Go executable. The final image uses Alpine Linux 3.24.2 and contains the executable and HTTPS CA certificates. Go, Node.js, build dependencies, and credentials stay out of the runtime image. Official image versions and digests are pinned in the Dockerfile; update them deliberately when adopting upstream patches.
 
-From the `finance_app` directory:
+From the root directory:
 
 ```bash
-docker build -t ledger-finance:local .
+make docker-build
 ```
 
-Configure `.env` as described above, then run on Linux:
+The default image tag is `ledger-finance:local`. To choose another tag, run `make docker-build DOCKER_IMAGE=your-name:your-tag`.
+
+Configure `.env` as described above, then run on Linux with Docker Compose:
+
+```bash
+make docker-run
+```
+
+This builds the image and starts the container in the foreground. Open <http://127.0.0.1:8765> and stop with `Ctrl+C`. The launcher reads `GOOGLE_TOKEN_FILE` from `.env`, unless you override it in your shell environment. The [Compose file](compose.yaml) mounts `.env` and that token file read-only. Both files must exist; missing files cause an error rather than creating directories. The Make target runs the container with your Linux UID/GID so credentials with mode `600` remain readable.
+
+Override the host token path, configuration path, or published port when needed:
+
+```bash
+GOOGLE_TOKEN_FILE=/absolute/path/token.json LEDGER_ENV_FILE=/absolute/path/demo.env LEDGER_PORT=9000 make docker-run
+```
+
+Host environment variables `FINANCE_SHEET_ID`, `FINANCE_TRANSACTIONS_TAB`, and `FINANCE_CATEGORIES_TAB` override the mounted `.env` when set. If they are unset, the app uses the file's values. For example, use a demo workbook without editing `.env`:
+
+```bash
+FINANCE_SHEET_ID=your-demo-workbook-id make docker-run
+```
+
+`make docker-run` expands `~/` in `GOOGLE_TOKEN_FILE` to your home directory and resolves relative token paths from the configuration file's directory, just like the Go server. It reads the token path as literal data and never sources `.env`. Restart with `make docker-run` after changing overrides; Compose recreates the container when its configuration changes.
+
+`DOCKER_IMAGE=your-name:your-tag` also works with `make docker-run`. The Make target uses `--env-file /dev/null` to keep Compose from interpreting the app's `.env` as Compose configuration; the app reads the mounted file itself. Inside the container, the listener always uses port `8765` and the mounted token path, overriding those two settings in the app's `.env`.
+
+Alternatively, run the image directly:
 
 ```bash
 docker run --rm --name ledger-finance \
