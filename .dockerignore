@@ -1,0 +1,18 @@
+# Send only build inputs. Local config, tokens, exports, Python code, and binaries
+# stay outside the build context, including files with unexpected filenames.
+**
+!Dockerfile
+!.dockerignore
+!go.mod
+!go.sum
+!*.go
+!package.json
+!package-lock.json
+!static/
+static/**
+!static/app.js
+!static/index.html
+!static/styles.css
+!tests/
+tests/**
+!tests/frontend.test.cjs

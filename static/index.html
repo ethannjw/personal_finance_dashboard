@@ -1,0 +1,165 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f3f0e8">
+  <title>Ledger · Finance overview</title>
+  <link rel="stylesheet" href="/vendor/tabulator.min.css">
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar">
+      <a class="brand" href="/" aria-label="Ledger dashboard">
+        <span class="brand-mark">L</span>
+        <span><strong>Ledger</strong><small>Finance overview</small></span>
+      </a>
+
+      <nav class="main-nav" aria-label="Primary navigation">
+        <button class="nav-item active" data-view="overview"><span>⌁</span> Overview</button>
+        <button class="nav-item" data-view="transactions"><span>⇄</span> Transactions</button>
+      </nav>
+
+      <div class="sidebar-spacer"></div>
+      <div class="sheet-status">
+        <span class="status-dot"></span>
+        <span><strong>Google Sheets</strong><small id="sync-status">Connecting…</small></span>
+      </div>
+      <a class="sheet-link" id="sheet-link" target="_blank" rel="noreferrer">Open workbook ↗</a>
+    </aside>
+
+    <main>
+      <header class="topbar">
+        <div>
+          <p class="eyebrow">FINANCIAL COMMAND CENTER</p>
+          <h1 id="page-title">Your money, clearly.</h1>
+        </div>
+        <div class="topbar-actions">
+          <label class="search-box">
+            <span>⌕</span>
+            <input id="global-search" type="search" placeholder="Search transactions" aria-label="Search transactions">
+          </label>
+          <button id="refresh-button" class="icon-button" title="Refresh from Google Sheets" aria-label="Refresh from Google Sheets">↻</button>
+        </div>
+      </header>
+
+      <section class="filter-bar" aria-label="Overview filters">
+        <label>BUCKET<select id="bucket-filter"><option value="all">All buckets</option></select></label>
+        <label>YEAR<select id="year-filter"><option value="all">All years</option></select></label>
+        <label>MONTH<select id="month-filter"><option value="all">All months</option></select></label>
+        <label>CATEGORY<select id="category-filter"><option value="all">All categories</option></select></label>
+        <label>STATUS<select id="status-filter"><option value="all">All activity</option><option value="included">Tracked expenses</option><option value="excluded">Transfers / excluded</option></select></label>
+        <button id="clear-filters" class="text-button">Clear filters</button>
+      </section>
+
+      <div id="loading" class="loading-state">
+        <span class="loader"></span>
+        <p>Reading your workbook…</p>
+      </div>
+
+      <div id="error-state" class="error-state hidden" role="alert">
+        <strong>Couldn’t load the workbook</strong>
+        <p id="error-message"></p>
+        <button id="retry-button" class="primary-button">Try again</button>
+      </div>
+
+      <div id="content" class="hidden">
+        <section id="overview-view">
+          <div class="period-summary">
+            <div>
+              <p class="eyebrow">SELECTED PERIOD</p>
+              <h2 id="period-title">All time</h2>
+              <p id="period-subtitle">Across all reporting buckets</p>
+            </div>
+            <div class="bucket-tabs" id="bucket-tabs" aria-label="Quick bucket filter">
+              <button class="active" data-bucket="all">All</button>
+            </div>
+          </div>
+
+          <div class="metric-grid">
+            <article class="metric-card primary-metric">
+              <div class="metric-heading"><span>NET EXPENSES</span><span class="metric-icon">$</span></div>
+              <strong id="net-expenses">—</strong>
+              <small id="net-caption">Tracked expenses after credits</small>
+            </article>
+            <article class="metric-card">
+              <div class="metric-heading"><span>TRANSACTIONS</span><span class="metric-icon warm">#</span></div>
+              <strong id="transaction-count">—</strong>
+              <small id="transaction-caption">Included in reporting</small>
+            </article>
+            <article class="metric-card">
+              <div class="metric-heading"><span>MONTHLY AVERAGE</span><span class="metric-icon cool">≈</span></div>
+              <strong id="monthly-average">—</strong>
+              <small id="average-caption">Across represented months</small>
+            </article>
+            <article class="metric-card">
+              <div class="metric-heading"><span>TOP CATEGORY</span><span class="metric-icon plum">◇</span></div>
+              <strong id="top-category">—</strong>
+              <small id="top-category-caption">—</small>
+            </article>
+          </div>
+
+          <div class="chart-grid">
+            <article class="panel chart-panel">
+              <div class="panel-title"><div><p class="eyebrow">TREND</p><h3>Monthly expenses</h3></div><span class="legend"><i></i> Net spend</span></div>
+              <div id="monthly-chart" class="chart" aria-label="Monthly expense chart"></div>
+            </article>
+            <article class="panel chart-panel">
+              <div class="panel-title"><div><p class="eyebrow">BREAKDOWN</p><h3>Top categories</h3></div></div>
+              <div id="category-chart" class="category-chart" aria-label="Expense category chart"></div>
+            </article>
+          </div>
+        </section>
+
+        <section class="panel transactions-panel hidden">
+          <div class="panel-title transaction-title">
+            <div><p class="eyebrow">ACTIVITY</p><h3 id="table-title">All transactions</h3></div>
+            <div class="table-tools">
+              <span id="result-count">0 results</span>
+              <button id="reset-grid-button" class="text-button">Reset table</button>
+              <button id="download-button" class="text-button">Export CSV</button>
+            </div>
+          </div>
+          <div class="grid-help">Click a heading to sort · use the controls under headings to filter · drag headings to rearrange · double-click a row to edit</div>
+          <form id="bulk-form" class="bulk-toolbar">
+            <strong id="selected-count" aria-live="polite" class=""> 0 selected</strong>
+            <button type="button" id="clear-selection" class="secondary-button">Clear selection</button>
+            <label>Change <select id="bulk-field"><option value="category">Category</option><option value="description">Description</option><option value="notes">Notes</option><option value="isTransfer">Tracked status</option></select></label>
+            <label id="bulk-category-label">To <select id="bulk-category"></select></label>
+            <label id="bulk-text-label" class="hidden">To <input id="bulk-text" maxlength="500" placeholder="New value for selected entries"></label>
+            <label id="bulk-status-label" class="hidden">To <select id="bulk-status"><option value="false">Tracked</option><option value="true">Excluded / internal transfer</option></select></label>
+            <button id="bulk-apply" class="secondary-button" disabled>Apply to selected</button>
+            <span id="bulk-progress" role="status"></span>
+            <small>Header checkbox selects this page. Selections carry across pages. Changes save to Google Sheets.</small>
+          </form>
+          <div id="transaction-grid" aria-label="Sortable and filterable transactions"></div>
+        </section>
+      </div>
+    </main>
+  </div>
+
+  <div id="drawer-backdrop" class="drawer-backdrop hidden"></div>
+  <aside id="edit-drawer" class="edit-drawer" aria-hidden="true" aria-labelledby="edit-title">
+    <div class="drawer-header"><div><p class="eyebrow">EDIT TRANSACTION</p><h2 id="edit-title">Transaction details</h2></div><button id="close-drawer" class="icon-button" aria-label="Close">×</button></div>
+    <form id="edit-form">
+      <input type="hidden" id="edit-id">
+      <div class="transaction-hero"><span id="edit-date">—</span><strong id="edit-amount">—</strong><small id="edit-account">—</small></div>
+      <label class="field">Category<select id="edit-category"></select></label>
+      <label class="transfer-toggle">
+        <input id="edit-transfer" type="checkbox">
+        <span class="switch"></span>
+        <span><strong>Transfer / not an expense</strong><small>Exclude this movement from all expense reports</small></span>
+      </label>
+      <label class="field">Description<textarea id="edit-description" rows="3" maxlength="500"></textarea></label>
+      <label class="field">Notes<textarea id="edit-notes" rows="3" maxlength="2000" placeholder="Optional context for this transaction"></textarea></label>
+      <div class="info-note">Changes are written directly to Google Sheets. Category, description, and notes remain preserved by the existing refresh workflow.</div>
+      <div class="drawer-actions"><button type="button" id="cancel-edit" class="secondary-button">Cancel</button><button type="submit" id="save-edit" class="primary-button">Save changes</button></div>
+    </form>
+  </aside>
+
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+  <script src="/vendor/tabulator.min.js" defer></script>
+  <script src="/app.js" defer></script>
+</body>
+</html>
